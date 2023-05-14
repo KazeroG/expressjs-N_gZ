@@ -1,13 +1,29 @@
-import { config } from 'dotenv';
+const express = require('express');
+const bodyParser = require('body-parser');
+const pdf = require('html-pdf');
 
-if (process.env.NODE_ENV !== 'production') {
-  config();
-}
-// call after config() to access the env variables
-import { app } from './api';
-
+const app = express();
 const port = process.env.PORT || 3333;
 
-app.listen(port, () =>
-  console.log(`API available on http://localhost:${port}`)
-);
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// Endpoint to convert HTML to PDF
+app.post('/convert', (req, res) => {
+  const { html } = req.body;
+
+  pdf.create(html).toStream((err, stream) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('An error occurred');
+    } else {
+      res.setHeader('Content-Type', 'application/pdf');
+      stream.pipe(res);
+    }
+  });
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
